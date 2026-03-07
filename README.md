@@ -1,3 +1,5 @@
+> **Fork of [stellessia/termux-nix-monet](https://github.com/stellessia/termux-nix-monet)** — Termux with [nix-on-droid](https://github.com/nix-community/nix-on-droid) bootstrap and [Termux-Monet](https://github.com/HardcodedCat/termux-monet) Material You theming. This fork merges upstream fixes (AutoFill, scrolling, SGR) and updates bootstrap to prerelease-25.11.
+
 <p align="center">
   <img src="/art/logo_dark.png#gh-dark-mode-only">
   <img src="/art/logo_light.png#gh-light-mode-only">
