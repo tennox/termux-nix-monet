@@ -14,17 +14,23 @@ tasks:
       - ./gradlew assembleRelease
 
   install:
-    desc: Install debug APK to connected device
+    desc: Install debug APK to connected device (auto-detects ABI)
     deps: [build]
+    vars:
+      ABI:
+        sh: adb shell getprop ro.product.cpu.abi
     cmds:
-      - adb install -r app/build/outputs/apk/debug/app-debug.apk
+      - adb install -r app/build/outputs/apk/debug/termux-app_apt-android-7-debug_{{.ABI}}.apk
       - adb shell am start -n com.termux/.HomeActivity
 
   install:release:
-    desc: Install release APK to connected device
+    desc: Install release APK to connected device (auto-detects ABI)
     deps: [build:release]
+    vars:
+      ABI:
+        sh: adb shell getprop ro.product.cpu.abi
     cmds:
-      - adb install -r app/build/outputs/apk/release/app-release.apk
+      - adb install -r app/build/outputs/apk/release/termux-app_apt-android-7-release_{{.ABI}}.apk
       - adb shell am start -n com.termux/.HomeActivity
 
   clean:
