@@ -21,7 +21,7 @@
 ### ✅ Merged (from termux-app)
 
 #### HIGH Priority
-- `5f578d56` - Update bootstrap packages from 2022.04.28 to **2026.02.12**
+- `5f578d56` - Update bootstrap packages - used **prerelease-25.11** (2026.02.12 not available on server)
 - `ef4775b6` - Increase read buffer size from **4KB to 64KB**
 - `3f0dec35` - Remove deprecated `extractNativeLibs` attribute (already not present)
 
