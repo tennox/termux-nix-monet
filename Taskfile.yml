@@ -23,6 +23,17 @@ tasks:
       - adb install -r app/build/outputs/apk/debug/termux-app_apt-android-7-debug_{{.ABI}}.apk
       - adb shell am start -n com.termux/.HomeActivity
 
+  install:with-reset:
+    desc: Install debug APK and clear app data (forces bootstrap re-download)
+    deps: [build]
+    vars:
+      ABI:
+        sh: adb shell getprop ro.product.cpu.abi
+    cmds:
+      - adb install -r app/build/outputs/apk/debug/termux-app_apt-android-7-debug_{{.ABI}}.apk
+      - adb shell pm clear com.termux
+      - adb shell am start -n com.termux/.HomeActivity
+
   install:release:
     desc: Install release APK to connected device (auto-detects ABI)
     deps: [build:release]
