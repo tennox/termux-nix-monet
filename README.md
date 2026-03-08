@@ -12,6 +12,19 @@
 
 > **Fork of [stellessia/termux-nix-monet]** — Termux with [nix-on-droid] bootstrap and [Termux-Monet] Material You theming. This fork merges upstream fixes (AutoFill, scrolling, SGR) and updates bootstrap to prerelease-25.11.
 
+## Build & Install
+
+```bash
+# Build (direnv loads devenv automatically)
+./gradlew assembleDebug
+
+# Install (requires uninstalling any existing Termux apps due to sharedUserId)
+adb install -r app/build/outputs/apk/debug/termux-app_apt-android-7-debug_arm64-v8a.apk
+
+# Run
+adb shell am start -n com.termux/.app.TermuxActivity
+```
+
 <p align="center">
   <img src="/art/logo_dark.png#gh-dark-mode-only">
   <img src="/art/logo_light.png#gh-light-mode-only">
