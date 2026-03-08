@@ -65,7 +65,9 @@ import static com.termux.shared.termux.TermuxConstants.TERMUX_STAGING_PREFIX_DIR
 final class TermuxInstaller {
 
     private static final String LOG_TAG = "TermuxInstaller";
-    static String defaultBootstrapURL = "https://nix-on-droid.unboiled.info/bootstrap-prerelease-25.11";
+    // Built from nix-on-droid testing branch (67b1053) with updated proot-termux (2026-02-21) for Android 16 / kernel 6.12 compatibility
+    // nix build "github:nix-community/nix-on-droid/67b1053#packages.x86_64-linux.bootstrapZip-aarch64" --impure && ucan-upload ./result
+    static String defaultBootstrapURL = "https://ipfs.zt.ax/ipfs/bafybeibivyfen76da3mxu4s6ngk5joxtmhpbquiiyfpmuk55pywbsbplza";
 
     /**
      * Performs bootstrap setup if necessary.
