@@ -33,6 +33,7 @@ in
   packages = with pkgs;
     [
       gradle
+      go-task
 
       # Search for packages: https://search.nixos.org/packages?channel=unstable&query=cowsay
       # (note: this searches on unstable channel, you might need to use pkgs-latest for some):

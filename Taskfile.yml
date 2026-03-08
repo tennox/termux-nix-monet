@@ -1,0 +1,64 @@
+version: '3'
+
+dotenv: ['.env']
+
+tasks:
+  build:
+    desc: Build debug APK
+    cmds:
+      - ./gradlew assembleDebug
+
+  build:release:
+    desc: Build release APK
+    cmds:
+      - ./gradlew assembleRelease
+
+  install:
+    desc: Install debug APK to connected device
+    deps: [build]
+    cmds:
+      - adb install -r app/build/outputs/apk/debug/app-debug.apk
+      - adb shell am start -n com.termux/.HomeActivity
+
+  install:release:
+    desc: Install release APK to connected device
+    deps: [build:release]
+    cmds:
+      - adb install -r app/build/outputs/apk/release/app-release.apk
+      - adb shell am start -n com.termux/.HomeActivity
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - ./gradlew clean
+
+  adb:ls:
+    desc: List app files directory (e.g., task adb:ls -- PREFIX/bin)
+    cmds:
+      - adb shell "run-as com.termux ls -la {{ .CLI_ARGS }}"
+
+  adb:cat:
+    desc: Read any app file (e.g., task adb:cat -- PREFIX/etc/bashrc)
+    cmds:
+      - adb shell "run-as com.termux cat {{ .CLI_ARGS }}"
+
+  adb:logs:
+    desc: Capture logcat and save to file (Ctrl+C to stop)
+    cmds:
+      - adb logcat --format=brief | tee ./tmp/termux-logcat.log
+
+  adb:logs:app:
+    desc: Filter logcat for app package logs
+    cmds:
+      - adb logcat --format=brief 2>&1 | grep "com\.termux"
+
+  adb:restart:
+    desc: Restart the app
+    cmds:
+      - adb shell am force-stop com.termux
+      - adb shell am start -n com.termux/.HomeActivity
+
+  adb:logcat:clear:
+    desc: Clear logcat buffer
+    cmds:
+      - adb logcat -c
