@@ -202,6 +202,9 @@ final class TermuxInstaller {
                                 String zipEntryName = zipEntry.getName();
                                 File targetFile = new File(TERMUX_STAGING_PREFIX_DIR_PATH, zipEntryName);
                                 boolean isDirectory = zipEntry.isDirectory();
+                                if (!isDirectory && zipEntryName.contains("login-inner")) {
+                                    Logger.logInfo(LOG_TAG, "Extracting bootstrap file: " + zipEntryName);
+                                }
                                 error = ensureDirectoryExists(isDirectory ? targetFile : targetFile.getParentFile());
                                 if (error != null) {
                                     showBootstrapErrorDialog(activity, whenDone, Error.getErrorMarkdownString(error));
@@ -215,10 +218,21 @@ final class TermuxInstaller {
                                     byte[] content = byteStream.toByteArray();
                                     // Patch nix-on-droid package name to match this app's package name
                                     // (bootstrap scripts are generated with com.termux.nix hardcoded)
-                                    String text = new String(content, java.nio.charset.StandardCharsets.UTF_8);
-                                    if (text.contains("com.termux.nix")) {
-                                        content = text.replace("com.termux.nix", TermuxConstants.TERMUX_PACKAGE_NAME)
-                                            .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                                    // Try to patch text files; skip binary files gracefully
+                                    if (isLikelyTextFile(zipEntryName, content)) {
+                                        try {
+                                            String text = new String(content, java.nio.charset.StandardCharsets.UTF_8);
+                                            if (text.contains("com.termux.nix")) {
+                                                int countBefore = text.split("com\\.termux\\.nix", -1).length - 1;
+                                                Logger.logInfo(LOG_TAG, "Patching com.termux.nix → com.termux in: " + zipEntryName + " (" + countBefore + " occurrences)");
+                                                byte[] contentBefore = content;
+                                                content = text.replace("com.termux.nix", TermuxConstants.TERMUX_PACKAGE_NAME)
+                                                    .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                                                Logger.logInfo(LOG_TAG, "  File size: " + contentBefore.length + " → " + content.length + " bytes");
+                                            }
+                                        } catch (Exception e) {
+                                            Logger.logWarn(LOG_TAG, "Failed to patch text file (will write unpatched): " + zipEntryName + " (" + e.getMessage() + ")");
+                                        }
                                     }
                                     try (FileOutputStream outStream = new FileOutputStream(targetFile)) {
                                         outStream.write(content);
@@ -406,6 +420,24 @@ final class TermuxInstaller {
 
     private static Error ensureDirectoryExists(File directory) {
         return FileUtils.createDirectoryFile(directory.getAbsolutePath());
+    }
+
+    /** Check if a file is likely to be text based on name and content */
+    private static boolean isLikelyTextFile(String zipEntryName, byte[] content) {
+        // Text files by extension or path patterns
+        if (zipEntryName.endsWith(".sh") || zipEntryName.endsWith(".txt") ||
+            zipEntryName.endsWith(".conf") || zipEntryName.endsWith(".nix") ||
+            zipEntryName.endsWith(".fish") || zipEntryName.endsWith(".bash") ||
+            zipEntryName.contains("/etc/") || zipEntryName.contains("/lib/") ||
+            zipEntryName.contains("profile.d/") || zipEntryName.contains("login")) {
+            return true;
+        }
+        // Check for null bytes (indicates binary file)
+        for (byte b : content) {
+            if (b == 0) return false;
+        }
+        // Assume text if we got here and it's not huge
+        return content.length < 10 * 1024 * 1024; // 10MB limit for text file detection
     }
 
     /** Get bootstrap zip url for this systems cpu architecture. */
