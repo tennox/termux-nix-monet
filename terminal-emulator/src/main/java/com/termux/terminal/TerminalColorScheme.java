@@ -41,6 +41,9 @@ public final class TerminalColorScheme {
 
     public TerminalColorScheme() {
         reset();
+        // Apply foreground color adjustment for light theme compatibility
+        setForegroundColorForBackground();
+        setCursorColorForBackground();
     }
 
     private void reset() {
@@ -50,12 +53,14 @@ public final class TerminalColorScheme {
     public void updateWith(Properties props) {
         reset();
         boolean cursorPropExists = false;
+        boolean foregroundPropExists = false;
         for (Map.Entry<Object, Object> entries : props.entrySet()) {
             String key = (String) entries.getKey();
             String value = (String) entries.getValue();
             int colorIndex;
             if (key.equals("foreground")) {
                 colorIndex = TextStyle.COLOR_INDEX_FOREGROUND;
+                foregroundPropExists = true;
             } else if (key.equals("background")) {
                 colorIndex = TextStyle.COLOR_INDEX_BACKGROUND;
             } else if (key.equals("cursor")) {
@@ -77,6 +82,8 @@ public final class TerminalColorScheme {
         }
         if (!cursorPropExists)
             setCursorColorForBackground();
+        if (!foregroundPropExists)
+            setForegroundColorForBackground();
     }
 
     /**
@@ -94,6 +101,21 @@ public final class TerminalColorScheme {
                 mDefaultColors[TextStyle.COLOR_INDEX_CURSOR] = 0xffffffff;
             else
                 mDefaultColors[TextStyle.COLOR_INDEX_CURSOR] = 0xff000000;
+        }
+    }
+
+    /**
+     * Adjust foreground color based on background brightness to ensure readability.
+     * This handles light theme compatibility where the background becomes light.
+     */
+    public void setForegroundColorForBackground() {
+        int backgroundColor = mDefaultColors[TextStyle.COLOR_INDEX_BACKGROUND];
+        int brightness = TerminalColors.getPerceivedBrightnessOfColor(backgroundColor);
+        if (brightness > 0) {
+            if (brightness < 130)
+                mDefaultColors[TextStyle.COLOR_INDEX_FOREGROUND] = 0xffffffff;
+            else
+                mDefaultColors[TextStyle.COLOR_INDEX_FOREGROUND] = 0xff000000;
         }
     }
 }
