@@ -27,6 +27,7 @@ import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.TermuxUtils;
 import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
@@ -205,9 +206,22 @@ final class TermuxInstaller {
                                     return;
                                 }
                                 if (!isDirectory) {
+                                    // Read full entry into memory for potential text patching
+                                    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                                    int readBytes;
+                                    while ((readBytes = zipInput.read(buffer)) != -1) byteStream.write(buffer, 0, readBytes);
+                                    byte[] content = byteStream.toByteArray();
+                                    // Patch nix-on-droid package name to match this app's package name
+                                    // (bootstrap scripts are generated with com.termux.nix hardcoded)
+                                    if (zipEntryName.startsWith("bin/") || zipEntryName.startsWith("etc/")) {
+                                        String text = new String(content, java.nio.charset.StandardCharsets.UTF_8);
+                                        if (text.contains("com.termux.nix")) {
+                                            content = text.replace("com.termux.nix", TermuxConstants.TERMUX_PACKAGE_NAME)
+                                                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                                        }
+                                    }
                                     try (FileOutputStream outStream = new FileOutputStream(targetFile)) {
-                                        int readBytes;
-                                        while ((readBytes = zipInput.read(buffer)) != -1) outStream.write(buffer, 0, readBytes);
+                                        outStream.write(content);
                                     }
                                     if (zipEntryName.startsWith("bin/") || zipEntryName.startsWith("libexec") ||
                                         zipEntryName.startsWith("lib/apt/apt-helper") || zipEntryName.startsWith("lib/apt/methods") ||
