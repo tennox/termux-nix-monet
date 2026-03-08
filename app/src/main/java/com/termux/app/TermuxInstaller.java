@@ -215,12 +215,10 @@ final class TermuxInstaller {
                                     byte[] content = byteStream.toByteArray();
                                     // Patch nix-on-droid package name to match this app's package name
                                     // (bootstrap scripts are generated with com.termux.nix hardcoded)
-                                    if (zipEntryName.startsWith("bin/") || zipEntryName.startsWith("etc/")) {
-                                        String text = new String(content, java.nio.charset.StandardCharsets.UTF_8);
-                                        if (text.contains("com.termux.nix")) {
-                                            content = text.replace("com.termux.nix", TermuxConstants.TERMUX_PACKAGE_NAME)
-                                                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                                        }
+                                    String text = new String(content, java.nio.charset.StandardCharsets.UTF_8);
+                                    if (text.contains("com.termux.nix")) {
+                                        content = text.replace("com.termux.nix", TermuxConstants.TERMUX_PACKAGE_NAME)
+                                            .getBytes(java.nio.charset.StandardCharsets.UTF_8);
                                     }
                                     try (FileOutputStream outStream = new FileOutputStream(targetFile)) {
                                         outStream.write(content);
