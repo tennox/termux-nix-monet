@@ -1,4 +1,16 @@
-> **Fork of [stellessia/termux-nix-monet](https://github.com/stellessia/termux-nix-monet)** — Termux with [nix-on-droid](https://github.com/nix-community/nix-on-droid) bootstrap and [Termux-Monet](https://github.com/HardcodedCat/termux-monet) Material You theming. This fork merges upstream fixes (AutoFill, scrolling, SGR) and updates bootstrap to prerelease-25.11.
+## Fork Chain
+
+```
+[termux] → [Termux-Monet] → [stellessia/termux-nix-monet] → (this fork)
+                          ↳ [nix-on-droid] (bootstrap)
+```
+
+[termux]: https://github.com/termux/termux-app
+[Termux-Monet]: https://github.com/HardcodedCat/termux-monet
+[stellessia/termux-nix-monet]: https://github.com/stellessia/termux-nix-monet
+[nix-on-droid]: https://github.com/nix-community/nix-on-droid
+
+> **Fork of [stellessia/termux-nix-monet]** — Termux with [nix-on-droid] bootstrap and [Termux-Monet] Material You theming. This fork merges upstream fixes (AutoFill, scrolling, SGR) and updates bootstrap to prerelease-25.11.
 
 <p align="center">
   <img src="/art/logo_dark.png#gh-dark-mode-only">
