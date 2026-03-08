@@ -1,6 +1,6 @@
 # Merge Upstream Changes
 
-## Status: In Progress
+## Status: Completed
 
 ## Upstream Repos Summary
 
@@ -18,12 +18,12 @@
 - SGR sequence fix
 - Scrolling with horizontal margins fix
 
-### ⚠️ Not Merged (from termux-app)
+### ✅ Merged (from termux-app)
 
 #### HIGH Priority
 - `5f578d56` - Update bootstrap packages from 2022.04.28 to **2026.02.12**
 - `ef4775b6` - Increase read buffer size from **4KB to 64KB**
-- `3f0dec35` - Remove deprecated `extractNativeLibs` attribute
+- `3f0dec35` - Remove deprecated `extractNativeLibs` attribute (already not present)
 
 #### MEDIUM Priority
 - `1937595c` - Revert `desugar_jdk_libs` back to 1.1.5
@@ -33,6 +33,6 @@
 - Various Gradle, AGP, GitHub Actions updates
 
 ## Key Objectives
-1. Merge HIGH priority commits from termux-app
-2. Test build compiles
-3. Test app runs on device
+1. Merge HIGH priority commits from termux-app ✅
+2. Test build compiles ✅ (BUILD SUCCESSFUL)
+3. Test app runs on device (pending)

@@ -64,7 +64,7 @@ import static com.termux.shared.termux.TermuxConstants.TERMUX_STAGING_PREFIX_DIR
 final class TermuxInstaller {
 
     private static final String LOG_TAG = "TermuxInstaller";
-    static String defaultBootstrapURL = "https://nix-on-droid.unboiled.info/bootstrap-prerelease-25.11";
+    static String defaultBootstrapURL = "https://nix-on-droid.unboiled.info/bootstrap-2026.02.12";
 
     /**
      * Performs bootstrap setup if necessary.

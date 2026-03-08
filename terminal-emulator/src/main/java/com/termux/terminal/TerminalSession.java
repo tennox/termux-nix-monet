@@ -41,13 +41,13 @@ public final class TerminalSession extends TerminalOutput {
      * A queue written to from a separate thread when the process outputs, and read by main thread to process by
      * terminal emulator.
      */
-    final ByteQueue mProcessToTerminalIOQueue = new ByteQueue(4096);
+    final ByteQueue mProcessToTerminalIOQueue = new ByteQueue(65536);
 
     /**
      * A queue written to from the main thread due to user interaction, and read by another thread which forwards by
      * writing to the {@link #mTerminalFileDescriptor}.
      */
-    final ByteQueue mTerminalToProcessIOQueue = new ByteQueue(4096);
+    final ByteQueue mTerminalToProcessIOQueue = new ByteQueue(65536);
 
     /**
      * Buffer to write translate code points into utf8 before writing to mTerminalToProcessIOQueue
@@ -163,7 +163,7 @@ public final class TerminalSession extends TerminalOutput {
             @Override
             public void run() {
                 try (InputStream termIn = new FileInputStream(terminalFileDescriptorWrapped)) {
-                    final byte[] buffer = new byte[4096];
+                    final byte[] buffer = new byte[65536];
                     while (true) {
                         int read = termIn.read(buffer);
                         if (read == -1)
@@ -181,7 +181,7 @@ public final class TerminalSession extends TerminalOutput {
 
             @Override
             public void run() {
-                final byte[] buffer = new byte[4096];
+                final byte[] buffer = new byte[65536];
                 try (FileOutputStream termOut = new FileOutputStream(terminalFileDescriptorWrapped)) {
                     while (true) {
                         int bytesToWrite = mTerminalToProcessIOQueue.read(buffer, true);
