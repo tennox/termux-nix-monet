@@ -498,12 +498,18 @@ public final class TerminalView extends View {
      * @param textSize the new font size, in density-independent pixels.
      */
     public void setTextSize(int textSize) {
-        mRenderer = new TerminalRenderer(textSize, mRenderer == null ? Typeface.MONOSPACE : mRenderer.mTypeface);
+        mRenderer = new TerminalRenderer(textSize, mRenderer == null ? Typeface.MONOSPACE : mRenderer.mTypeface, mRenderer == null ? Typeface.MONOSPACE : mRenderer.mItalicTypeface);
         updateSize();
     }
 
     public void setTypeface(Typeface newTypeface) {
-        mRenderer = new TerminalRenderer(mRenderer.mTextSize, newTypeface);
+        mRenderer = new TerminalRenderer(mRenderer.mTextSize, newTypeface, mRenderer.mItalicTypeface);
+        updateSize();
+        invalidate();
+    }
+
+    public void setTypeface(Typeface newTypeface, Typeface newItalicTypeface) {
+        mRenderer = new TerminalRenderer(mRenderer.mTextSize, newTypeface, newItalicTypeface);
         updateSize();
         invalidate();
     }
@@ -975,7 +981,7 @@ public final class TerminalView extends View {
         int newRows = Math.max(4, (viewHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.mFontLineSpacing);
 
         if (mEmulator == null || (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows)) {
-            mTermSession.updateSize(newColumns, newRows);
+            mTermSession.updateSize(newColumns, newRows, (int) mRenderer.getFontWidth(), mRenderer.getFontLineSpacing());
             mEmulator = mTermSession.getEmulator();
             mClient.onEmulatorSet();
 

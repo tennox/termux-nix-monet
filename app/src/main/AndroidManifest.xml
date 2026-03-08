@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="internalOnly"
-    android:sharedUserId="${TERMUX_PACKAGE_NAME}"
+    android:sharedUserId="com.termux.monet"
     android:sharedUserLabel="@string/shared_user_label">
 
     <uses-feature
@@ -147,7 +147,7 @@
             </intent-filter>
         </activity-alias>
 
-        <activity android:name="android.app.NativeActivity" android:configChanges="orientation|screenSize">
+        <activity android:name="android.app.NativeActivity" android:configChanges="orientation|screenSize" android:exported="true">
             <!-- Tell NativeActivity the name of our .so -->
             <meta-data android:name="android.app.lib_name" android:value="native-entrypoint"/>
 

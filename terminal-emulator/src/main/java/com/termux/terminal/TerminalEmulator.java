@@ -167,6 +167,10 @@ public final class TerminalEmulator {
 
     TerminalSessionClient mClient;
 
+    private final boolean mBoldWithBright;
+
+    private int cellW = 12, cellH = 12;
+
     /** Keeps track of the current argument of the current escape sequence. Ranges from 0 to MAX_ESCAPE_PARAMETERS-1. */
     private int mArgIndex;
     /** Holds the arguments of the current escape sequence. */
@@ -310,8 +314,9 @@ public final class TerminalEmulator {
         }
     }
 
-    public TerminalEmulator(TerminalOutput session, int columns, int rows, Integer transcriptRows, TerminalSessionClient client) {
+    public TerminalEmulator(TerminalOutput session, boolean boldWithBright, int columns, int rows, Integer transcriptRows, TerminalSessionClient client) {
         mSession = session;
+        mBoldWithBright = boldWithBright;
         mScreen = mMainBuffer = new TerminalBuffer(columns, getTerminalTranscriptRows(transcriptRows), rows);
         mAltBuffer = new TerminalBuffer(columns, rows, rows);
         mClient = client;
@@ -2471,7 +2476,16 @@ public final class TerminalEmulator {
         if (bracketed) mSession.write("\033[201~");
     }
 
-    /** http://www.vt100.net/docs/vt510-rm/DECSC */
+    public void setCellSize(int w, int h) {
+        cellW = w;
+        cellH = h;
+    }
+
+    public boolean isBoldWithBright() {
+        return mBoldWithBright;
+    }
+
+    /** http://www.vt100.net/docs/vt510rm/DECSC */
     static final class SavedScreenState {
         /** Saved state of the cursor position, Used to implement the save/restore cursor position escape sequences. */
         int mSavedCursorRow, mSavedCursorCol;

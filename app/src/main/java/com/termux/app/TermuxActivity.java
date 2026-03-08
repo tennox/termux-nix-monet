@@ -31,6 +31,7 @@ import com.termux.app.api.file.FileReceiverActivity;
 import com.termux.app.terminal.TermuxActivityRootView;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.io.TermuxTerminalExtraKeys;
+import com.termux.app.style.TermuxBackgroundManager;
 import com.termux.shared.activities.ReportActivity;
 import com.termux.shared.activity.ActivityUtils;
 import com.termux.shared.activity.media.AppCompatActivityUtils;
@@ -132,6 +133,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      * The client for the {@link #mExtraKeysView}.
      */
     TermuxTerminalExtraKeys mTermuxTerminalExtraKeys;
+
+    TermuxBackgroundManager mTermuxBackgroundManager;
 
     /**
      * The termux sessions list controller.
@@ -509,7 +512,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     private void setTerminalToolbarView(Bundle savedInstanceState) {
         mTermuxTerminalExtraKeys = new TermuxTerminalExtraKeys(this, mTerminalView,
-            mTermuxTerminalViewClient, mTermuxTerminalSessionActivityClient);
+            mTermuxTerminalViewClient, mTermuxTerminalSessionActivityClient, 0);
 
         final ViewPager terminalToolbarViewPager = getTerminalToolbarViewPager();
         if (mPreferences.shouldShowTerminalToolbar()) terminalToolbarViewPager.setVisibility(View.VISIBLE);
@@ -527,7 +530,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         terminalToolbarViewPager.addOnPageChangeListener(new TerminalToolbarViewPager.OnPageChangeListener(this, terminalToolbarViewPager));
     }
 
-    private void setTerminalToolbarHeight() {
+    public void setTerminalToolbarHeight() {
         final ViewPager terminalToolbarViewPager = getTerminalToolbarViewPager();
         if (terminalToolbarViewPager == null) return;
 
@@ -774,7 +777,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
                 // If permission is granted, then also setup storage symlinks.
                 if(PermissionUtils.checkAndRequestLegacyOrManageExternalStoragePermission(
-                    TermuxActivity.this, requestCode, !isPermissionCallback)) {
+                    TermuxActivity.this, requestCode, !isPermissionCallback, true)) {
                     if (isPermissionCallback)
                         Logger.logInfoAndShowToast(TermuxActivity.this, LOG_TAG,
                             getString(com.termux.shared.R.string.msg_storage_permission_granted_on_request));
@@ -829,7 +832,15 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         return mTermuxTerminalExtraKeys;
     }
 
+    public TermuxTerminalExtraKeys getTermuxTerminalExtraKeys(int position) {
+        return mTermuxTerminalExtraKeys;
+    }
+
     public void setExtraKeysView(ExtraKeysView extraKeysView) {
+        mExtraKeysView = extraKeysView;
+    }
+
+    public void setExtraKeysView(ExtraKeysView extraKeysView, int position) {
         mExtraKeysView = extraKeysView;
     }
 
@@ -998,6 +1009,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
     }
 
+    public TermuxBackgroundManager getmTermuxBackgroundManager() {
+        return mTermuxBackgroundManager;
+    }
 
 
     public static void startTermuxActivity(@NonNull final Context context) {
