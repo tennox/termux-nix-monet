@@ -128,13 +128,17 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      * The terminal extra keys view.
      */
     ExtraKeysView mExtraKeysView;
+    ExtraKeysView mExtraKeysView2;
 
     /**
      * The client for the {@link #mExtraKeysView}.
      */
     TermuxTerminalExtraKeys mTermuxTerminalExtraKeys;
+    TermuxTerminalExtraKeys mTermuxTerminalExtraKeys2;
 
     TermuxBackgroundManager mTermuxBackgroundManager;
+
+    public boolean isToolbarHidden = false;
 
     /**
      * The termux sessions list controller.
@@ -244,9 +248,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
 
-        setTermuxTerminalViewAndClients();
+        setBackgroundManager();
 
-        this.mTermuxBackgroundManager = new TermuxBackgroundManager(TermuxActivity.this);
+        setTermuxTerminalViewAndClients();
 
         setTerminalToolbarView(savedInstanceState);
 
@@ -303,6 +307,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mPreferences.isTerminalMarginAdjustmentEnabled())
             addTermuxActivityRootViewGlobalLayoutListener();
 
+        configureViewVisibility(R.id.terminal_monetbackground, mPreferences.isMonetBackgroundEnabled());
+        configureBackgroundBlur(R.id.sessions_backgroundblur, R.id.sessions_background, mPreferences.isSessionsBlurEnabled(), 0.5f);
+        configureExtraKeysBackground();
+
         registerTermuxActivityBroadcastReceiver();
     }
 
@@ -320,11 +328,47 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mTermuxTerminalViewClient != null)
             mTermuxTerminalViewClient.onResume();
 
+        configureViewVisibility(R.id.terminal_monetbackground, mPreferences.isMonetBackgroundEnabled());
+        configureBackgroundBlur(R.id.sessions_backgroundblur, R.id.sessions_background, mPreferences.isSessionsBlurEnabled(), 0.5f);
+        configureExtraKeysBackground();
+
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
         TermuxCrashUtils.notifyAppCrashFromCrashLogFile(this, LOG_TAG);
 
         mIsOnResumeAfterOnCreate = false;
+    }
+
+    private void configureViewVisibility(int viewId, boolean isVisible) {
+        View view = findViewById(viewId);
+        view.setVisibility(isVisible ? View.VISIBLE : View.GONE);
+    }
+
+    private void configureBackgroundBlur(int blurViewId, int backgroundViewId, boolean isBlurEnabled, float alphaIfBlurred) {
+        View blurView = findViewById(blurViewId);
+        View backgroundView = findViewById(backgroundViewId);
+        blurView.setVisibility(isBlurEnabled ? View.VISIBLE : View.GONE);
+        backgroundView.setAlpha(isBlurEnabled ? alphaIfBlurred : 1.0f);
+    }
+
+    private void configureExtraKeysBackground() {
+        View extraKeysBackground = findViewById(R.id.extrakeys_background);
+        View extraKeysBackgroundBlur = findViewById(R.id.extrakeys_backgroundblur);
+        boolean isToolbarToggled = mPreferences.toogleShowTerminalToolbar();
+
+        if (!isToolbarToggled) {
+            extraKeysBackgroundBlur.setVisibility(View.GONE);
+            extraKeysBackground.setVisibility(View.GONE);
+        } else {
+            if (mPreferences.isExtraKeysBlurEnabled()) {
+                extraKeysBackgroundBlur.setVisibility(View.VISIBLE);
+                extraKeysBackground.setAlpha(0.80f);
+            } else {
+                extraKeysBackgroundBlur.setVisibility(View.GONE);
+                extraKeysBackground.setAlpha(1.0f);
+            }
+            extraKeysBackground.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -515,6 +559,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private void setTerminalToolbarView(Bundle savedInstanceState) {
         mTermuxTerminalExtraKeys = new TermuxTerminalExtraKeys(this, mTerminalView,
             mTermuxTerminalViewClient, mTermuxTerminalSessionActivityClient, 0);
+        mTermuxTerminalExtraKeys2 = new TermuxTerminalExtraKeys(this, mTerminalView,
+            mTermuxTerminalViewClient, mTermuxTerminalSessionActivityClient, 1);
 
         final ViewPager terminalToolbarViewPager = getTerminalToolbarViewPager();
         if (mPreferences.shouldShowTerminalToolbar()) terminalToolbarViewPager.setVisibility(View.VISIBLE);
@@ -534,25 +580,57 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     public void setTerminalToolbarHeight() {
         final ViewPager terminalToolbarViewPager = getTerminalToolbarViewPager();
+        View extraKeysBackgroundBlur = findViewById(R.id.extrakeys_backgroundblur);
+        View extraKeysBackground = findViewById(R.id.extrakeys_background);
         if (terminalToolbarViewPager == null) return;
 
         ViewGroup.LayoutParams layoutParams = terminalToolbarViewPager.getLayoutParams();
-        layoutParams.height = Math.round(mTerminalToolbarDefaultHeight *
-            (mTermuxTerminalExtraKeys.getExtraKeysInfo() == null ? 0 : mTermuxTerminalExtraKeys.getExtraKeysInfo().getMatrix().length) *
-            mProperties.getTerminalToolbarHeightScaleFactor());
+
+        int i = terminalToolbarViewPager.getCurrentItem();
+        int matrix = 0;
+        if (i == 0) {
+            if (mTermuxTerminalExtraKeys.getExtraKeysInfo() != null)
+                matrix = mTermuxTerminalExtraKeys.getExtraKeysInfo().getMatrix().length;
+        } else {
+            if (mTermuxTerminalExtraKeys2.getExtraKeysInfo() != null)
+                matrix = mTermuxTerminalExtraKeys2.getExtraKeysInfo().getMatrix().length;
+        }
+
+        layoutParams.height = Math.round(mTerminalToolbarDefaultHeight * matrix * mProperties.getTerminalToolbarHeightScaleFactor());
         terminalToolbarViewPager.setLayoutParams(layoutParams);
+        extraKeysBackground.setLayoutParams(layoutParams);
+        extraKeysBackgroundBlur.setLayoutParams(layoutParams);
     }
 
     public void toggleTerminalToolbar() {
-        final ViewPager terminalToolbarViewPager = getTerminalToolbarViewPager();
+        ViewPager terminalToolbarViewPager = getTerminalToolbarViewPager();
         if (terminalToolbarViewPager == null) return;
 
-        final boolean showNow = mPreferences.toogleShowTerminalToolbar();
-        Logger.showToast(this, (showNow ? getString(R.string.msg_enabling_terminal_toolbar) : getString(R.string.msg_disabling_terminal_toolbar)), true);
-        terminalToolbarViewPager.setVisibility(showNow ? View.VISIBLE : View.GONE);
+        boolean showNow = mPreferences.toogleShowTerminalToolbar();
+        Logger.showToast(this, showNow ? getString(R.string.msg_enabling_terminal_toolbar) : getString(R.string.msg_disabling_terminal_toolbar), true);
+
+        updateViewVisibility(terminalToolbarViewPager, showNow);
+        updateViewVisibility(R.id.extrakeys_backgroundblur, showNow);
+        updateViewVisibility(R.id.extrakeys_background, showNow);
+
+        isToolbarHidden = !showNow;
+
         if (showNow && isTerminalToolbarTextInputViewSelected()) {
             // Focus the text input view if just revealed.
             findViewById(R.id.terminal_toolbar_text_input).requestFocus();
+        }
+    }
+
+    private void updateViewVisibility(int viewId, boolean isVisible) {
+        View view = findViewById(viewId);
+        if (view != null) {
+            view.setVisibility(isVisible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void updateViewVisibility(View view, boolean isVisible) {
+        if (view != null) {
+            view.setVisibility(isVisible ? View.VISIBLE : View.GONE);
         }
     }
 
@@ -599,6 +677,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         });
     }
 
+    private void setBackgroundManager() {
+        this.mTermuxBackgroundManager = new TermuxBackgroundManager(TermuxActivity.this);
+    }
 
 
 
