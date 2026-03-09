@@ -10,7 +10,16 @@
 [stellessia/termux-nix-monet]: https://github.com/stellessia/termux-nix-monet
 [nix-on-droid]: https://github.com/nix-community/nix-on-droid
 
-> **Fork of [stellessia/termux-nix-monet]** — Termux with [nix-on-droid] bootstrap and [Termux-Monet] Material You theming. This fork merges upstream fixes (AutoFill, scrolling, SGR) and updates bootstrap to prerelease-25.11.
+> **Fork of [stellessia/termux-nix-monet]** — Termux with [nix-on-droid] bootstrap and [Termux-Monet] Material You theming.
+
+## Changes in this fork
+
+- **Bootstrap**: Updated to custom build from [tennox/nix-on-droid] (main branch) with proot-termux (2026-02-21) for Android 16 / kernel 6.12 compatibility
+- **Package name fix**: Bootstrap builder patched to generate scripts with `com.termux` paths instead of `com.termux.nix`
+- **Monet theming**: Material You dynamic colors; auto-adjusts foreground for light themes
+- **Upstream fixes merged**: AutoFill, scrolling, SGR, and other upstream improvements from stellessia
+
+[tennox/nix-on-droid]: https://github.com/tennox/nix-on-droid
 
 ## Build & Install
 
