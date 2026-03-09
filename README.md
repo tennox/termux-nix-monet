@@ -2,8 +2,10 @@
 
 ```
 [termux] → [Termux-Monet] → [stellessia/termux-nix-monet] → (this fork)
-                          ↳ [nix-on-droid] (bootstrap)
 ```
+
+Nix bootstrap cherry-picked from [nix-on-droid] (not merged as subtree — individual changes copied in).
+Custom bootstrap builds from [tennox/nix-on-droid] fork, patched for `com.termux` package name.
 
 [termux]: https://github.com/termux/termux-app
 [Termux-Monet]: https://github.com/HardcodedCat/termux-monet
