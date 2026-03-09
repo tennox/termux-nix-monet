@@ -9,29 +9,36 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
 import com.termux.R;
 import com.termux.app.api.file.FileReceiverActivity;
+import com.termux.app.style.TermuxBackgroundManager;
 import com.termux.app.terminal.TermuxActivityRootView;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.io.TermuxTerminalExtraKeys;
-import com.termux.app.style.TermuxBackgroundManager;
 import com.termux.shared.activities.ReportActivity;
 import com.termux.shared.activity.ActivityUtils;
 import com.termux.shared.activity.media.AppCompatActivityUtils;
@@ -59,13 +66,16 @@ import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 import com.termux.view.TerminalView;
 import com.termux.view.TerminalViewClient;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsCompat.Type;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.viewpager.widget.ViewPager;
-
 import java.util.Arrays;
 
 /**
@@ -136,14 +146,17 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     TermuxTerminalExtraKeys mTermuxTerminalExtraKeys;
     TermuxTerminalExtraKeys mTermuxTerminalExtraKeys2;
 
-    TermuxBackgroundManager mTermuxBackgroundManager;
-
-    public boolean isToolbarHidden = false;
-
     /**
      * The termux sessions list controller.
      */
     TermuxSessionsListViewController mTermuxSessionListViewController;
+
+    /**
+     * The termux background manager for updating background.
+     */
+    TermuxBackgroundManager mTermuxBackgroundManager;
+
+    public boolean isToolbarHidden = false;
 
     /**
      * The {@link TermuxActivity} broadcast receiver for various things like terminal style configuration changes.
@@ -186,11 +199,18 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private static final int CONTEXT_MENU_SELECT_URL_ID = 0;
     private static final int CONTEXT_MENU_SHARE_TRANSCRIPT_ID = 1;
     private static final int CONTEXT_MENU_SHARE_SELECTED_TEXT = 10;
-    private static final int CONTEXT_MENU_AUTOFILL_USERNAME = 11;
+    private static final int CONTEXT_MENU_AUTOFILL_USERNAME = 14;
     private static final int CONTEXT_MENU_AUTOFILL_PASSWORD = 2;
     private static final int CONTEXT_MENU_RESET_TERMINAL_ID = 3;
     private static final int CONTEXT_MENU_KILL_PROCESS_ID = 4;
     private static final int CONTEXT_MENU_STYLING_ID = 5;
+
+    private static final int CONTEXT_SUBMENU_FONT_AND_COLOR_ID = 11;
+
+    private static final int CONTEXT_SUBMENU_SET_BACKROUND_IMAGE_ID = 12;
+
+    private static final int CONTEXT_SUBMENU_REMOVE_BACKGROUND_IMAGE_ID = 13;
+
     private static final int CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON = 6;
     private static final int CONTEXT_MENU_HELP_ID = 7;
     private static final int CONTEXT_MENU_SETTINGS_ID = 8;
@@ -240,12 +260,17 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         View content = findViewById(android.R.id.content);
         content.setOnApplyWindowInsetsListener((v, insets) -> {
-            mNavBarHeight = insets.getSystemWindowInsetBottom();
-            return insets;
+            WindowInsetsCompat insetsCompat = WindowInsetsCompat.toWindowInsetsCompat(insets, v);
+            mNavBarHeight = insetsCompat.getInsets(Type.systemBars()).bottom;
+            return insetsCompat.toWindowInsets();
         });
 
         if (mProperties.isUsingFullScreen()) {
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            WindowInsetsController insetsController = getWindow().getInsetsController();
+            if (insetsController != null) {
+                insetsController.hide(WindowInsets.Type.statusBars());
+                insetsController.hide(WindowInsets.Type.navigationBars());
+            }
         }
 
         setBackgroundManager();
@@ -267,7 +292,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         try {
             // Start the {@link TermuxService} and make it run regardless of who is bound to it
             Intent serviceIntent = new Intent(this, TermuxService.class);
-            startService(serviceIntent);
+            if (Build.VERSION.SDK_INT >= 26) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            };
 
             // Attempt to bind to the service, this will call the {@link #onServiceConnected(ComponentName, IBinder)}
             // callback if it succeeds.
@@ -286,6 +315,31 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         // Send the {@link TermuxConstants#BROADCAST_TERMUX_OPENED} broadcast to notify apps that Termux
         // app has been opened.
         TermuxUtils.sendTermuxOpenedBroadcast(this);
+
+        verifyRWPermission();
+        verifyAndroid11ManageFiles();
+    }
+
+    private void verifyRWPermission() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            String[] permissions = new String[] { android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE };
+            ActivityCompat.requestPermissions(this, permissions, 1738);
+        }
+    }
+
+    private void verifyAndroid11ManageFiles() {
+        if (Build.VERSION.SDK_INT >= 30 && !Environment.isExternalStorageManager()) {
+            Intent i = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            i.setData(Uri.fromParts("package", getPackageName(), null));
+            startActivity(i);
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        Logger.logVerbose(LOG_TAG, "onConfigurationChanged");
+        super.onConfigurationChanged(newConfig);
+        mTermuxTerminalSessionActivityClient.onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -689,15 +743,18 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     public void onBackPressed() {
         if (getDrawer().isDrawerOpen(Gravity.LEFT)) {
             getDrawer().closeDrawers();
-        } else {
-            finishActivityIfNotFinishing();
+        } else if (!getDrawer().isDrawerOpen(Gravity.LEFT)) {
+            getDrawer().openDrawer(Gravity.LEFT);
         }
     }
 
     public void finishActivityIfNotFinishing() {
         // prevent duplicate calls to finish() if called from multiple places
         if (!TermuxActivity.this.isFinishing()) {
-            finish();
+            if (mPreferences.isRemoveTaskOnActivityFinishEnabled())
+                finishAndRemoveTask();
+            else
+                finish();
         }
     }
 
@@ -729,7 +786,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             menu.add(Menu.NONE, CONTEXT_MENU_AUTOFILL_PASSWORD, Menu.NONE, R.string.action_autofill_password);
         menu.add(Menu.NONE, CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, R.string.action_reset_terminal);
         menu.add(Menu.NONE, CONTEXT_MENU_KILL_PROCESS_ID, Menu.NONE, getResources().getString(R.string.action_kill_process, getCurrentSession().getPid())).setEnabled(currentSession.isRunning());
-        menu.add(Menu.NONE, CONTEXT_MENU_STYLING_ID, Menu.NONE, R.string.action_style_terminal);
+        SubMenu subMenu = menu.addSubMenu(Menu.NONE, CONTEXT_MENU_STYLING_ID, Menu.NONE, R.string.action_style_terminal);
+        subMenu.clearHeader();
+        subMenu.add(SubMenu.NONE, CONTEXT_SUBMENU_FONT_AND_COLOR_ID, SubMenu.NONE, R.string.action_font_and_color);
+        subMenu.add(SubMenu.NONE, CONTEXT_SUBMENU_SET_BACKROUND_IMAGE_ID, SubMenu.NONE, R.string.action_set_background_image);
+        subMenu.add(SubMenu.NONE, CONTEXT_SUBMENU_REMOVE_BACKGROUND_IMAGE_ID, SubMenu.NONE, R.string.action_remove_background_image);
         menu.add(Menu.NONE, CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON, Menu.NONE, R.string.action_toggle_keep_screen_on).setCheckable(true).setChecked(mPreferences.shouldKeepScreenOn());
         menu.add(Menu.NONE, CONTEXT_MENU_HELP_ID, Menu.NONE, R.string.action_open_help);
         menu.add(Menu.NONE, CONTEXT_MENU_SETTINGS_ID, Menu.NONE, R.string.action_open_settings);
@@ -769,8 +830,14 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             case CONTEXT_MENU_KILL_PROCESS_ID:
                 showKillSessionDialog(session);
                 return true;
-            case CONTEXT_MENU_STYLING_ID:
-                showStylingDialog();
+            case CONTEXT_SUBMENU_FONT_AND_COLOR_ID:
+                showFontAndColorDialog();
+                return true;
+            case CONTEXT_SUBMENU_SET_BACKROUND_IMAGE_ID:
+                mTermuxBackgroundManager.setBackgroundImage();
+                return true;
+            case CONTEXT_SUBMENU_REMOVE_BACKGROUND_IMAGE_ID:
+                mTermuxBackgroundManager.removeBackgroundImage(true);
                 return true;
             case CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON:
                 toggleKeepScreenOn();
@@ -802,11 +869,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         final AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setIcon(android.R.drawable.ic_dialog_alert);
         b.setMessage(R.string.title_confirm_kill_process);
-        b.setPositiveButton(android.R.string.yes, (dialog, id) -> {
+        b.setPositiveButton(android.R.string.ok, (dialog, id) -> {
             dialog.dismiss();
             session.finishIfRunning();
         });
-        b.setNegativeButton(android.R.string.no, null);
+        b.setNegativeButton(android.R.string.cancel, null);
         b.show();
     }
 
@@ -820,7 +887,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
     }
 
-    private void showStylingDialog() {
+    private void showFontAndColorDialog() {
         Intent stylingIntent = new Intent();
         stylingIntent.setClassName(TermuxConstants.TERMUX_STYLING_PACKAGE_NAME, TermuxConstants.TERMUX_STYLING.TERMUX_STYLING_ACTIVITY_NAME);
         try {
@@ -907,24 +974,30 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         return mTermuxActivityBottomSpaceView;
     }
 
+    public ExtraKeysView getExtraKeysView(int i) {
+        if (i==0)
+            return mExtraKeysView;
+        else
+            return mExtraKeysView2;
+    }
+
     public ExtraKeysView getExtraKeysView() {
-        return mExtraKeysView;
+        int i = getTerminalToolbarViewPager().getCurrentItem();
+        return getExtraKeysView(i);
     }
 
-    public TermuxTerminalExtraKeys getTermuxTerminalExtraKeys() {
-        return mTermuxTerminalExtraKeys;
+    public TermuxTerminalExtraKeys getTermuxTerminalExtraKeys(int i) {
+        if (i==0)
+            return mTermuxTerminalExtraKeys;
+        else
+            return mTermuxTerminalExtraKeys2;
     }
 
-    public TermuxTerminalExtraKeys getTermuxTerminalExtraKeys(int position) {
-        return mTermuxTerminalExtraKeys;
-    }
-
-    public void setExtraKeysView(ExtraKeysView extraKeysView) {
-        mExtraKeysView = extraKeysView;
-    }
-
-    public void setExtraKeysView(ExtraKeysView extraKeysView, int position) {
-        mExtraKeysView = extraKeysView;
+    public void setExtraKeysView(ExtraKeysView extraKeysView, int i) {
+        if (i==0)
+            mExtraKeysView = extraKeysView;
+        else
+            mExtraKeysView2 = extraKeysView;
     }
 
     public DrawerLayout getDrawer() {
@@ -1002,6 +1075,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
 
 
+    public TermuxBackgroundManager getmTermuxBackgroundManager() {
+        return mTermuxBackgroundManager;
+    }
+
     public static void updateTermuxActivityStyling(Context context, boolean recreateActivity) {
         // Make sure that terminal styling is always applied.
         Intent stylingIntent = new Intent(TERMUX_ACTIVITY.ACTION_RELOAD_STYLE);
@@ -1015,7 +1092,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         intentFilter.addAction(TERMUX_ACTIVITY.ACTION_RELOAD_STYLE);
         intentFilter.addAction(TERMUX_ACTIVITY.ACTION_REQUEST_PERMISSIONS);
 
-        registerReceiver(mTermuxActivityBroadcastReceiver, intentFilter, Context.RECEIVER_EXPORTED);
+        if (Build.VERSION.SDK_INT >= 28 ) {
+            registerReceiver(mTermuxActivityBroadcastReceiver, intentFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(mTermuxActivityBroadcastReceiver, intentFilter);
+        }
     }
 
     private void unregisterTermuxActivityBroadcastReceiver() {
@@ -1067,6 +1148,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 mExtraKeysView.setButtonTextAllCaps(mProperties.shouldExtraKeysTextBeAllCaps());
                 mExtraKeysView.reload(mTermuxTerminalExtraKeys.getExtraKeysInfo(), mTerminalToolbarDefaultHeight);
             }
+            if (mExtraKeysView2 != null) {
+                mExtraKeysView2.setButtonTextAllCaps(mProperties.shouldExtraKeysTextBeAllCaps());
+                mExtraKeysView2.reload(mTermuxTerminalExtraKeys2.getExtraKeysInfo(), mTerminalToolbarDefaultHeight);
+            }
 
             // Update NightMode.APP_NIGHT_MODE
             TermuxThemeUtils.setAppNightMode(mProperties.getNightMode());
@@ -1090,10 +1175,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             Logger.logDebug(LOG_TAG, "Recreating activity");
             TermuxActivity.this.recreate();
         }
-    }
-
-    public TermuxBackgroundManager getmTermuxBackgroundManager() {
-        return mTermuxBackgroundManager;
     }
 
 

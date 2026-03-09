@@ -32,7 +32,21 @@
 #### LOW Priority (deps/CI updates)
 - Various Gradle, AGP, GitHub Actions updates
 
+### ✅ Restored Monet Features (TermuxActivity.java)
+- Imports: PackageManager, Configuration, Build, Environment, Settings, SubMenu, WindowInsets, WindowInsetsController, ActivityCompat, ContextCompat, WindowInsetsCompat
+- Constants: CONTEXT_SUBMENU_FONT_AND_COLOR_ID/SET_BACKGROUND/REMOVE_BACKGROUND + fixed AUTOFILL collision
+- onCreate: WindowInsetsCompat insets, WindowInsetsController fullscreen, API-aware startForegroundService, storage permission checks
+- New methods: verifyRWPermission(), verifyAndroid11ManageFiles(), onConfigurationChanged()
+- onBackPressed: opens drawer instead of finishing
+- finishActivityIfNotFinishing: finishAndRemoveTask() support
+- Context menu: Styling submenu (Font & Color / Set Background / Remove Background)
+- showFontAndColorDialog() renamed from showStylingDialog()
+- Page-aware accessor methods for extra keys views
+- Broadcast receiver: RECEIVER_NOT_EXPORTED guard (API 28+)
+- reloadActivityStyling: reloads mExtraKeysView2
+
 ## Key Objectives
 1. Merge HIGH priority commits from termux-app ✅
-2. Test build compiles ✅ (BUILD SUCCESSFUL)
-3. Test app runs on device (pending)
+2. Restore Monet features lost in upstream merge ✅
+3. Test build compiles ✅ (BUILD SUCCESSFUL)
+4. Test app runs on device (pending)
