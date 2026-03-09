@@ -65,10 +65,10 @@ import static com.termux.shared.termux.TermuxConstants.TERMUX_STAGING_PREFIX_DIR
 final class TermuxInstaller {
 
     private static final String LOG_TAG = "TermuxInstaller";
-    // Built from https://github.com/tennox/nix-on-droid main branch commit 71b102a
+    // Built from https://github.com/tennox/nix-on-droid main branch commit f346dd4
     // Package name paths fixed: /data/data/com.termux/files instead of /data/data/com.termux.nix/files
     // Build: nix build --accept-flake-config .#packages.x86_64-linux.bootstrapZip-aarch64 && ucan-upload upload ./result/
-    static String defaultBootstrapURL = "https://ipfs.zt.ax/ipfs/bafybeia7s45sy6bbmu2vo3ndf73nzjcu3wvmam3tohteicuifqnsjuk2ti";
+    static String defaultBootstrapURL = "https://ipfs.zt.ax/ipfs/bafybeialtodx3qgjikboxxd2lzqf5cufonpz4co2nwdlmm4pbkbodeaq4i";
 
     /**
      * Performs bootstrap setup if necessary.
