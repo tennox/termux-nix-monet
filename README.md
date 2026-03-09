@@ -12,6 +12,12 @@
 
 > **Fork of [stellessia/termux-nix-monet]** — Termux with [nix-on-droid] bootstrap and [Termux-Monet] Material You theming.
 
+## Package name: `com.termux`
+
+This fork keeps the `com.termux` application ID for compatibility with third-party apps (Tasker, Automate, etc.) that send explicit intents to `com.termux`.
+It uses a different `sharedUserId` (`io.txlab`), so official Termux plugins won't work — as it's signed with my keys,
+I can recompile Termux plugins with the same `sharedUserId` and they'll be compatible (TODO).
+
 ## Changes in this fork
 
 - **Bootstrap**: Updated to custom build from [tennox/nix-on-droid] (main branch) with proot-termux (2026-02-21) for Android 16 / kernel 6.12 compatibility
