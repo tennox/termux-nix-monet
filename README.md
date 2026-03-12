@@ -1,15 +1,19 @@
 ## Fork Chain
 
 ```
-[termux] → [Termux-Monet] → [stellessia/termux-nix-monet] → (this fork)
+[termux-app] ──→ [nix-on-droid-app] ─(code copied)─→ [stellessia/termux-nix-monet] ──→ (this fork)
+     │                                                          ↑
+     └──→ [Termux-Monet] ──────────────────────────────────────┘ (Monet theming merged in)
 ```
 
-Nix bootstrap cherry-picked from [nix-on-droid] (not merged as subtree — individual changes copied in).
-Custom bootstrap builds from [tennox/nix-on-droid] fork, patched for `com.termux` package name.
+Stellessia ported [nix-on-droid-app] code (URL-based bootstrap, `EXECUTABLES.txt`, arch detection) into a [Termux-Monet] fork by copy — not as a git merge, so no nix-on-droid-app commits are in our git history.
 
-[termux]: https://github.com/termux/termux-app
+At runtime, the app downloads a bootstrap zip built from [tennox/nix-on-droid] fork, patched for `com.termux` package name.
+
+[termux-app]: https://github.com/termux/termux-app
 [Termux-Monet]: https://github.com/HardcodedCat/termux-monet
 [stellessia/termux-nix-monet]: https://github.com/stellessia/termux-nix-monet
+[nix-on-droid-app]: https://github.com/nix-community/nix-on-droid-app
 [nix-on-droid]: https://github.com/nix-community/nix-on-droid
 
 > **Fork of [stellessia/termux-nix-monet]** — Termux with [nix-on-droid] bootstrap and [Termux-Monet] Material You theming.
