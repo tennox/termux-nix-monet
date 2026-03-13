@@ -225,6 +225,10 @@ public class TermuxBackgroundManager {
             return;
         TerminalSession session = mActivity.getCurrentSession();
         if (session != null && session.getEmulator() != null) {
+            if (mPreferences.isMonetBackgroundEnabled()) {
+                session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_FOREGROUND] = 0xff000000;
+                session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_CURSOR] = 0xff000000;
+            }
             mActivity.getWindow().getDecorView().setBackgroundColor(session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_BACKGROUND]);
         }
     }

@@ -28,6 +28,7 @@ import com.termux.shared.termux.terminal.io.BellHandler;
 import com.termux.shared.logger.Logger;
 import com.termux.terminal.TerminalColors;
 import com.termux.terminal.TerminalSession;
+import com.termux.terminal.TextStyle;
 import com.termux.terminal.TerminalSessionClient;
 import java.io.File;
 import java.io.FileInputStream;
@@ -501,6 +502,10 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             TerminalSession session = mActivity.getCurrentSession();
             if (session != null && session.getEmulator() != null) {
                 session.getEmulator().mColors.reset();
+                if (mActivity.getPreferences().isMonetBackgroundEnabled()) {
+                    session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_FOREGROUND] = 0xff000000;
+                    session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_CURSOR] = 0xff000000;
+                }
             }
             final Typeface newTypeface = (fontFile.exists() && fontFile.length() > 0) ? Typeface.createFromFile(fontFile) : Typeface.MONOSPACE;
             final Typeface newItalicTypeface = (italicFontFile.exists() && italicFontFile.length() > 0) ? Typeface.createFromFile(italicFontFile) : newTypeface;
