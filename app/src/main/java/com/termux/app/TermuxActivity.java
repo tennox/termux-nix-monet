@@ -892,9 +892,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         stylingIntent.setClassName(TermuxConstants.TERMUX_STYLING_PACKAGE_NAME, TermuxConstants.TERMUX_STYLING.TERMUX_STYLING_ACTIVITY_NAME);
         try {
             startActivity(stylingIntent);
-        } catch (ActivityNotFoundException | IllegalArgumentException e) {
+        } catch (ActivityNotFoundException | IllegalArgumentException | SecurityException e) {
             // The startActivity() call is not documented to throw IllegalArgumentException.
             // However, crash reporting shows that it sometimes does, so catch it here.
+            // SecurityException is thrown when styling is installed from a different source (signature mismatch).
             new AlertDialog.Builder(this).setMessage(getString(R.string.error_styling_not_installed))
                 .setPositiveButton(R.string.action_styling_install,
                     (dialog, which) -> ActivityUtils.startActivity(this, new Intent(Intent.ACTION_VIEW, Uri.parse(TermuxConstants.TERMUX_STYLING_FDROID_PACKAGE_URL))))
