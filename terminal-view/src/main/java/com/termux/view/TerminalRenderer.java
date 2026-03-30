@@ -260,9 +260,9 @@ public final class TerminalRenderer {
             // fontLineSpacing?
             float cursorHeight = fontLineSpacing;
             if (cursorStyle == TerminalEmulator.TERMINAL_CURSOR_STYLE_UNDERLINE)
-                cursorHeight /= 4.;
+                cursorHeight /= 4.f;
             else if (cursorStyle == TerminalEmulator.TERMINAL_CURSOR_STYLE_BAR)
-                right -= ((right - left) * 3) / 4.;
+                right -= (((right - left) * 3) / 4.f);
             canvas.drawRect(left, y - cursorHeight, right, y, mTextPaint);
         }
         if ((effect & TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE) == 0) {
