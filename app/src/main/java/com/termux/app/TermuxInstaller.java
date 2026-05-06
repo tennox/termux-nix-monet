@@ -11,6 +11,7 @@ import android.system.Os;
 import android.util.Pair;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 
 import com.termux.R;
 import com.termux.shared.file.FileUtils;
@@ -34,6 +35,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -68,6 +70,7 @@ final class TermuxInstaller {
     // Package name paths fixed: /data/data/com.termux/files instead of /data/data/com.termux.nix/files
     // Build: nix build --accept-flake-config .#packages.x86_64-linux.bootstrapZip-aarch64 && ucan-upload upload ./result/
     static String defaultBootstrapURL = "https://ipfs.zt.ax/ipfs/bafybeialtodx3qgjikboxxd2lzqf5cufonpz4co2nwdlmm4pbkbodeaq4i";
+    static String defaultConfigFlakeURL = "github:tennox/nix-on-droid#template";
 
     /**
      * Performs bootstrap setup if necessary.
@@ -112,20 +115,31 @@ final class TermuxInstaller {
             Logger.logInfo(LOG_TAG, "The termux prefix directory \"" + TERMUX_PREFIX_DIR_PATH + "\" does not exist but another file exists at its destination.");
 
         }
-        final EditText taskEditText = new EditText(activity);
+        final EditText bootstrapURLEditText = new EditText(activity);
+        final EditText configFlakeURLEditText = new EditText(activity);
         String archName = determineTermuxArchName();
-        taskEditText.setHint(defaultBootstrapURL);
-        taskEditText.setText(defaultBootstrapURL);
+
+        bootstrapURLEditText.setHint(defaultBootstrapURL);
+        bootstrapURLEditText.setText(defaultBootstrapURL);
+
+        configFlakeURLEditText.setHint(defaultConfigFlakeURL);
+        configFlakeURLEditText.setText(defaultConfigFlakeURL);
+
+        LinearLayout layout = new LinearLayout(activity);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.addView(bootstrapURLEditText);
+        layout.addView(configFlakeURLEditText);
 
         AlertDialog dialog = new AlertDialog.Builder(activity)
-            .setTitle("Bootstrap zipball location")
-            .setMessage("Enter the URL of a directory containing bootstrap-" + archName + ".zip")
-            .setView(taskEditText)
+            .setTitle("Bootstrap setup")
+            .setMessage("Configure bootstrap ZIP and nix-on-droid config")
+            .setView(layout)
             .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    String bootstrapURL = String.valueOf(taskEditText.getText());
-                    restOfSetupIfNeeded(activity, whenDone, bootstrapURL);
+                    String bootstrapURL = String.valueOf(bootstrapURLEditText.getText());
+                    String configFlakeURL = String.valueOf(configFlakeURLEditText.getText());
+                    restOfSetupIfNeeded(activity, whenDone, bootstrapURL, configFlakeURL);
                 }
             })
             .create();
@@ -133,7 +147,7 @@ final class TermuxInstaller {
         dialog.show();
     }
 
-    static void restOfSetupIfNeeded(final Activity activity, final Runnable whenDone, String bootstrapURL) {
+    static void restOfSetupIfNeeded(final Activity activity, final Runnable whenDone, String bootstrapURL, String configFlakeURL) {
 
         final ProgressDialog progress = ProgressDialog.show(activity, null, activity.getString(R.string.bootstrap_installer_body), true, false);
         new Thread() {
@@ -255,7 +269,11 @@ final class TermuxInstaller {
                                 null, ExecutionCommand.Runner.APP_SHELL.getName(), false);
                         executionCommand.commandLabel = "Termux Bootstrap Second Stage Command";
                         executionCommand.backgroundCustomLogLevel = Logger.LOG_LEVEL_NORMAL;
-                        AppShell appShell = AppShell.execute(activity, executionCommand, null, new TermuxShellEnvironment(), null, true);
+                        HashMap<String, String> additionalEnv = new HashMap<>();
+                        if (configFlakeURL != null && !configFlakeURL.isEmpty()) {
+                            additionalEnv.put("NIX_ON_DROID_INITIAL_CONFIG_FLAKE_URL", configFlakeURL);
+                        }
+                        AppShell appShell = AppShell.execute(activity, executionCommand, null, new TermuxShellEnvironment(), additionalEnv, true);
                         boolean stderrSet = !executionCommand.resultData.stderr.toString().isEmpty();
                         if (appShell == null || !executionCommand.isSuccessful() || executionCommand.resultData.exitCode != 0 || stderrSet) {
                             // Delete prefix directory as otherwise when app is restarted, the broken prefix directory would be used and logged into
