@@ -13,7 +13,7 @@ android {
 
         externalNativeBuild {
             ndkBuild {
-                cFlags "-Wall", "-Wextra", "-Werror", "-Os", "-fno-stack-protector", "-Wl,--gc-sections"
+                cFlags "-Wall", "-Wextra", "-Werror", "-Os", "-fno-stack-protector"
             }
         }
 
