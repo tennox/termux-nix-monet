@@ -233,7 +233,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         ReportActivity.deleteReportInfoFilesOlderThanXDays(this, 14, false);
 
         // Load Termux app SharedProperties from disk
-        mProperties = TermuxAppSharedProperties.getProperties();
+        mProperties = TermuxAppSharedProperties.init(this);
         reloadProperties();
 
         setActivityTheme();

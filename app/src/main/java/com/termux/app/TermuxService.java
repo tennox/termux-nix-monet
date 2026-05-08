@@ -121,7 +121,11 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // Get Termux app SharedProperties without loading from disk since TermuxApplication handles
         // load and TermuxActivity handles reloads
         mProperties = TermuxAppSharedProperties.getProperties();
+        if (mProperties == null)
+            mProperties = TermuxAppSharedProperties.init(this);
         mShellManager = TermuxShellManager.getShellManager();
+        if (mShellManager == null)
+            mShellManager = TermuxShellManager.init(this);
         runStartForeground();
         SystemEventReceiver.registerPackageUpdateEvents(this);
     }
