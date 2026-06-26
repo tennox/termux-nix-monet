@@ -198,6 +198,13 @@ JNIEXPORT void JNICALL Java_com_termux_terminal_JNI_setPtyUTF8Mode(JNIEnv* TERMU
     }
 }
 
+JNIEXPORT jint JNICALL Java_com_termux_terminal_JNI_getForegroundProcessGroup(JNIEnv* TERMUX_UNUSED(env), jclass TERMUX_UNUSED(clazz), jint fd)
+{
+    // The foreground process group of the pty is the currently-running job (e.g. ssh/mosh),
+    // not the session-leader shell. Returns < 0 on error (e.g. no foreground group).
+    return (jint) tcgetpgrp(fd);
+}
+
 JNIEXPORT jint JNICALL Java_com_termux_terminal_JNI_waitFor(JNIEnv* TERMUX_UNUSED(env), jclass TERMUX_UNUSED(clazz), jint pid)
 {
     int status;

@@ -358,6 +358,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mTermuxTerminalViewClient != null)
             mTermuxTerminalViewClient.onStart();
 
+        // Cancel any scheduled background pause and resume session foreground jobs paused while away.
+        if (mTermuxService != null)
+            mTermuxService.onActivityForegrounded();
+
         if (mPreferences.isTerminalMarginAdjustmentEnabled())
             addTermuxActivityRootViewGlobalLayoutListener();
 
@@ -441,6 +445,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mTermuxTerminalViewClient != null)
             mTermuxTerminalViewClient.onStop();
 
+        // Schedule pausing session foreground jobs after the background timeout to save battery.
+        if (mTermuxService != null)
+            mTermuxService.onActivityBackgrounded();
+
         removeTermuxActivityRootViewGlobalLayoutListener();
 
         unregisterTermuxActivityBroadcastReceiver();
@@ -491,6 +499,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Logger.logDebug(LOG_TAG, "onServiceConnected");
 
         mTermuxService = ((TermuxService.LocalBinder) service).service;
+
+        // The service may have outlived a previous activity and paused session foreground jobs while
+        // backgrounded; resume them now that we are connected and (if visible) in the foreground.
+        if (mIsVisible)
+            mTermuxService.onActivityForegrounded();
 
         setTermuxSessionsListView();
 

@@ -257,6 +257,8 @@ public abstract class TermuxSharedProperties {
                 return (int) getTerminalMarginVerticalInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_TERMINAL_TRANSCRIPT_ROWS:
                 return (int) getTerminalTranscriptRowsInternalPropertyValueFromValue(value);
+            case TermuxPropertyConstants.KEY_BACKGROUND_PAUSE_TIMEOUT:
+                return (int) getBackgroundPauseTimeoutInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_BACKGROUND_OVERLAY_COLOR:
                 return (int) getBackgroundOverlayInternalPropertyValueFromValue(value);
             /* float */
@@ -391,6 +393,19 @@ public abstract class TermuxSharedProperties {
      */
     public static int getTerminalTranscriptRowsInternalPropertyValueFromValue(String value) {
         return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_TERMINAL_TRANSCRIPT_ROWS, DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_TERMINAL_TRANSCRIPT_ROWS), TermuxPropertyConstants.DEFAULT_IVALUE_TERMINAL_TRANSCRIPT_ROWS, TermuxPropertyConstants.IVALUE_TERMINAL_TRANSCRIPT_ROWS_MIN, TermuxPropertyConstants.IVALUE_TERMINAL_TRANSCRIPT_ROWS_MAX, true, true, LOG_TAG);
+    }
+
+    /**
+     * Returns the int (minutes) for the value if its not null and is between
+     * {@link TermuxPropertyConstants#IVALUE_BACKGROUND_PAUSE_TIMEOUT_MIN} and
+     * {@link TermuxPropertyConstants#IVALUE_BACKGROUND_PAUSE_TIMEOUT_MAX},
+     * otherwise returns {@link TermuxPropertyConstants#DEFAULT_IVALUE_BACKGROUND_PAUSE_TIMEOUT}.
+     *
+     * @param value The {@link String} value to convert.
+     * @return Returns the internal value for value.
+     */
+    public static int getBackgroundPauseTimeoutInternalPropertyValueFromValue(String value) {
+        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BACKGROUND_PAUSE_TIMEOUT, DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BACKGROUND_PAUSE_TIMEOUT), TermuxPropertyConstants.DEFAULT_IVALUE_BACKGROUND_PAUSE_TIMEOUT, TermuxPropertyConstants.IVALUE_BACKGROUND_PAUSE_TIMEOUT_MIN, TermuxPropertyConstants.IVALUE_BACKGROUND_PAUSE_TIMEOUT_MAX, true, true, LOG_TAG);
     }
 
     /**
@@ -627,6 +642,11 @@ public abstract class TermuxSharedProperties {
 
     public int getTerminalTranscriptRows() {
         return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_TERMINAL_TRANSCRIPT_ROWS, true);
+    }
+
+    /** Minutes the app may stay backgrounded before pausing session foreground jobs; 0 disables. */
+    public int getBackgroundPauseTimeoutMinutes() {
+        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BACKGROUND_PAUSE_TIMEOUT, true);
     }
 
     public int getBackgroundOverlayColor() {

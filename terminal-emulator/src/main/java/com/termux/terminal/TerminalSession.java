@@ -70,6 +70,12 @@ public final class TerminalSession extends TerminalOutput {
     int mShellExitStatus;
 
     /**
+     * The process group paused by {@link #pauseForegroundJob()} with SIGSTOP, to be resumed with
+     * SIGCONT by {@link #resumeForegroundJob()}. 0 if nothing is currently paused.
+     */
+    private int mPausedProcessGroup;
+
+    /**
      * Whether to show bold text with bright colors.
      */
     private boolean mBoldWithBright;
@@ -284,6 +290,54 @@ public final class TerminalSession extends TerminalOutput {
             } catch (ErrnoException e) {
                 Logger.logWarn(mClient, LOG_TAG, "Failed sending SIGKILL: " + e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Pause the foreground job of this session (e.g. an ssh/mosh client) by sending SIGSTOP to its
+     * process group. The job stops reading the pty, which back-pressures through SSH/TCP flow control
+     * so the remote stops sending — letting the device sleep. Resume with {@link #resumeForegroundJob()}.
+     * <p/>
+     * The session-leader shell itself is left running. No-op if the session is not running, if there is
+     * no foreground job, or if a job is already paused.
+     *
+     * @return true if a job was paused.
+     */
+    public synchronized boolean pauseForegroundJob() {
+        if (!isRunning() || mPausedProcessGroup != 0) return false;
+        int pgrp = JNI.getForegroundProcessGroup(mTerminalFileDescriptor);
+        // Only pause if the foreground job is a real descendant, not the shell's own group (mShellPid):
+        // pausing the shell would freeze the whole session with nothing to resume it interactively.
+        if (pgrp <= 0 || pgrp == mShellPid) return false;
+        try {
+            Os.kill(-pgrp, OsConstants.SIGSTOP);
+            mPausedProcessGroup = pgrp;
+            Logger.logDebug(mClient, LOG_TAG, "Paused foreground process group " + pgrp);
+            return true;
+        } catch (ErrnoException e) {
+            Logger.logWarn(mClient, LOG_TAG, "Failed sending SIGSTOP to group " + pgrp + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Resume a job previously paused by {@link #pauseForegroundJob()} by sending SIGCONT to its
+     * process group. No-op if nothing is paused.
+     *
+     * @return true if a job was resumed.
+     */
+    public synchronized boolean resumeForegroundJob() {
+        if (mPausedProcessGroup == 0) return false;
+        int pgrp = mPausedProcessGroup;
+        mPausedProcessGroup = 0;
+        try {
+            Os.kill(-pgrp, OsConstants.SIGCONT);
+            Logger.logDebug(mClient, LOG_TAG, "Resumed foreground process group " + pgrp);
+            return true;
+        } catch (ErrnoException e) {
+            // The group may have already exited while paused (e.g. the connection died); harmless.
+            Logger.logWarn(mClient, LOG_TAG, "Failed sending SIGCONT to group " + pgrp + ": " + e.getMessage());
+            return false;
         }
     }
 

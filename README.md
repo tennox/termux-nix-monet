@@ -30,6 +30,7 @@ I can recompile Termux plugins with the same `sharedUserId` and they'll be compa
 - **Package name fix**: Bootstrap builder patched to generate scripts with `com.termux` paths instead of `com.termux.nix`
 - **Monet theming**: Material You dynamic colors; auto-adjusts foreground for light themes
 - **Upstream fixes merged**: AutoFill, scrolling, SGR, and other upstream improvements from stellessia
+- **Background pause**: Set `background-pause-timeout=<minutes>` in `termux.properties` to pause each session's foreground job (e.g. an ssh/mosh client) with `SIGSTOP` after the app has been backgrounded that long, so the remote stops streaming and the device can sleep. Resumed with `SIGCONT` on return to the foreground. Skipped while a wake lock is held; `0` (default) disables it. Pairs well with a server-side multiplexer like zellij/tmux, which can reattach if a paused connection is eventually dropped.
 
 [tennox/nix-on-droid]: https://github.com/tennox/nix-on-droid
 

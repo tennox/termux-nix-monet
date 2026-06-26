@@ -31,6 +31,15 @@ final class JNI {
     public static native void setPtyWindowSize(int fd, int rows, int cols, int cellWidth, int cellHeight);
 
     /**
+     * Get the foreground process group of a pty, i.e. the currently-running job (such as an ssh/mosh
+     * client) rather than the session-leader shell. Used to pause/resume that job with SIGSTOP/SIGCONT.
+     *
+     * @param fd The file descriptor of the pty master.
+     * @return the foreground process group id, or a negative value on error.
+     */
+    public static native int getForegroundProcessGroup(int fd);
+
+    /**
      * Causes the calling thread to wait for the process associated with the receiver to finish executing.
      *
      * @return if >= 0, the exit status of the process. If < 0, the signal causing the process to stop negated.

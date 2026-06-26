@@ -113,6 +113,12 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      */
     boolean mWantsToStop = false;
 
+    /**
+     * Pending task, posted to {@link #mHandler} when the activity is backgrounded, that pauses the
+     * foreground job of each session after the {@code background-pause-timeout}. Null when not scheduled.
+     */
+    private Runnable mBackgroundPauseRunnable;
+
     private static final String LOG_TAG = "TermuxService";
 
     @Override
@@ -321,6 +327,9 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         if (!PermissionUtils.checkIfBatteryOptimizationsDisabled(this)) {
             PermissionUtils.requestDisableBatteryOptimizations(this);
         }
+        // Holding a wake lock means the user wants background activity, so undo any background pause.
+        cancelScheduledBackgroundPause();
+        resumeSessionForegroundJobs();
         updateNotification();
         Logger.logDebug(LOG_TAG, "WakeLocks acquired successfully");
     }
@@ -345,6 +354,64 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         if (updateNotification)
             updateNotification();
         Logger.logDebug(LOG_TAG, "WakeLocks released successfully");
+    }
+
+    /**
+     * Called from {@link TermuxActivity#onStop()} when the app leaves the foreground. Schedules
+     * pausing of each session's foreground job (e.g. an ssh/mosh client) after the configured
+     * {@code background-pause-timeout}, so the remote stops streaming and the device can sleep.
+     * <p/>
+     * A held wake lock means the user explicitly wants background activity, so pausing is skipped.
+     * A timeout of {@code 0} disables the feature. We use {@link Handler#postDelayed} rather than an
+     * exact alarm: the only scenario this targets is a chatty session keeping the device awake, in
+     * which case uptime advances and the callback fires on schedule; if the device sleeps on its own
+     * first, no pausing is needed anyway.
+     */
+    public synchronized void onActivityBackgrounded() {
+        cancelScheduledBackgroundPause();
+        if (mWakeLock != null)
+            return;
+        int timeoutMinutes = mProperties.getBackgroundPauseTimeoutMinutes();
+        if (timeoutMinutes <= 0)
+            return;
+        mBackgroundPauseRunnable = () -> {
+            synchronized (TermuxService.this) {
+                mBackgroundPauseRunnable = null;
+                if (mWakeLock != null)
+                    return;
+                pauseSessionForegroundJobs();
+            }
+        };
+        mHandler.postDelayed(mBackgroundPauseRunnable, timeoutMinutes * 60_000L);
+        Logger.logDebug(LOG_TAG, "Scheduled background pause of session foreground jobs in " + timeoutMinutes + " min");
+    }
+
+    /**
+     * Called from {@link TermuxActivity#onStart()} when the app returns to the foreground. Cancels any
+     * pending pause and resumes session foreground jobs that were paused.
+     */
+    public synchronized void onActivityForegrounded() {
+        cancelScheduledBackgroundPause();
+        resumeSessionForegroundJobs();
+    }
+
+    private void cancelScheduledBackgroundPause() {
+        if (mBackgroundPauseRunnable != null) {
+            mHandler.removeCallbacks(mBackgroundPauseRunnable);
+            mBackgroundPauseRunnable = null;
+        }
+    }
+
+    /** Send SIGSTOP to each session's foreground job. Idempotent (see {@link TerminalSession#pauseForegroundJob()}). */
+    private synchronized void pauseSessionForegroundJobs() {
+        for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++)
+            mShellManager.mTermuxSessions.get(i).getTerminalSession().pauseForegroundJob();
+    }
+
+    /** Send SIGCONT to each session's foreground job. Idempotent (see {@link TerminalSession#resumeForegroundJob()}). */
+    private synchronized void resumeSessionForegroundJobs() {
+        for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++)
+            mShellManager.mTermuxSessions.get(i).getTerminalSession().resumeForegroundJob();
     }
 
     private void actionServiceStop(Intent intent) {
