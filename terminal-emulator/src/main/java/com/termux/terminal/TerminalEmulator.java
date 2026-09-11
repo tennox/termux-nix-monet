@@ -251,6 +251,9 @@ public final class TerminalEmulator {
      */
     private int mScrollCounter = 0;
 
+    /** The cached value for this emulator for `TerminalView.mTopRow` as sessions/emulators may be switched.*/
+    private int mTopRow;
+
     /** If automatic scrolling of terminal is disabled */
     private boolean mAutoScrollDisabled;
 
@@ -2408,6 +2411,16 @@ public final class TerminalEmulator {
 
     public void toggleAutoScrollDisabled() {
         mAutoScrollDisabled = !mAutoScrollDisabled;
+    }
+
+
+
+    public int getTopRow() {
+        return mTopRow;
+    }
+
+    public void setTopRow(int topRow) {
+        mTopRow = topRow;
     }
 
 
